@@ -1,0 +1,51 @@
+#include "array.h"
+#include "model.h"
+#include <cmath>
+#include <numeric>
+#include <vector>
+
+const int BATCH_SIZE = 1;
+const int N_INPUTS = 3;
+const int EPOCHS = 100000;
+const double LR = 0.000001;
+
+std::vector<std::vector<double>> GetExpected(std::vector<std::vector<double>> data);
+
+int main(){
+    //model({input_size, neurons in layer...}, (min inicialized val, max inicialized val), Batch size
+    Model<4> model(std::vector<int>{N_INPUTS,3,3,1}, std::vector<Functions>{PReLU, ELU,Ident}, std::pair<double, double>(0, 1));
+
+    for(int i = 0; i < EPOCHS; i++){
+        //Shape: Batchsize x nInputs
+        std::vector<std::vector<double>> data = GenData(std::pair<int, int>(BATCH_SIZE, N_INPUTS), std::pair<double, double>(0, 10));
+        std::vector<std::vector<double>> expected = GetExpected(data);
+
+        std::vector<std::vector<double>> predicted = model.ForwardPass(data);
+        if(i % 100 == 0){
+            std::cout << "Loss: " << MSELoss(predicted, expected) << "\n";
+        };
+        model.Gradient(expected, predicted);
+        model.UpdateGradient(LR);
+    };
+    //Shape: Batchsize x nInputs
+    std::vector<std::vector<double>> data = GenData(std::pair<int, int>(1, N_INPUTS), std::pair<double, double>(0, 10));
+    NDArray(data, "Data:");
+    std::vector<std::vector<double>> expected = GetExpected(data);
+    NDArray(expected, "EXPECTED");
+    NDArray(model.ForwardPass(data), "PREDICTED: ");
+
+    NDArray(model.GetWeights(), "weights");
+    NDArray(model.GetBiases(), "Biases: ");
+
+    return 0;
+};
+
+//Cusotm output function 
+std::vector<std::vector<double>> GetExpected(std::vector<std::vector<double>> data){
+    std::vector<std::vector<double>> out;
+    for(int i = 0; i < data.size(); i++){
+        double temp = std::pow(data[i][0], 3)+ pow(2, data[i][1]/10) - data[i][2];
+        out.push_back({temp});
+    };
+    return out;
+};
