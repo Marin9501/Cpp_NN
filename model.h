@@ -1,7 +1,7 @@
 #ifndef MODEL_H
 #define MODEL_H
 
-#include "array.h"
+#include "vector.h"
 #include <algorithm>
 #include <cmath>
 #include <random>
@@ -185,6 +185,7 @@ class Model{
         };
 
         void UpdateGradient(const double LR){
+
             for(int i = 0; i < nLayers; i++){
                 for(int j = 0; j < weights[i].size(); j++){
                     for(int k = 0; k < weights[i][j].size(); k++){
