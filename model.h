@@ -51,6 +51,15 @@ class Model{
         std::vector<std::vector<std::vector<double>>> weightedCache;
         std::vector<std::vector<std::vector<double>>> activationCache;
 
+        //Momentum for Adam
+        std::vector<std::vector<double>> mBiases;
+        std::vector<std::vector<double>> vBiases;
+        std::vector<std::vector<std::vector<double>>> mWeights;
+        std::vector<std::vector<std::vector<double>>> vWeights;
+
+        const double adamBeta1 = 0.9;
+        const double adamBeta2 = 0.999;
+
         std::vector<std::vector<std::vector<double>>> weightGrad;
         std::vector<std::vector<double>> biasGrad;
 
@@ -139,6 +148,20 @@ class Model{
 
             weightGrad = weights;
             biasGrad = biases;
+
+            for(int i = 0; i < weights.size(); i++){
+                std::vector<std::vector<double>> temp;
+                for(int j = 0; j < weights[i].size(); j++){
+                    temp.push_back(std::vector<double>(weights[i][j].size(), 0));
+                };
+                mWeights.push_back(temp);
+                vWeights.push_back(temp);
+            };
+
+            for(int i = 0; i < biases.size(); i++){
+                mBiases.push_back(std::vector<double>(biases[i].size(), 0));
+                vBiases.push_back(std::vector<double>(biases[i].size(), 0));
+            };
         };
 
         //FORWARD PASS
@@ -184,19 +207,29 @@ class Model{
             return;
         };
 
-        void UpdateGradient(const double LR){
-
+        void UpdateGradient(const double LR, const int t, const double EPSILON){
+            double mHat;
+            double vHat;
             for(int i = 0; i < nLayers; i++){
                 for(int j = 0; j < weights[i].size(); j++){
                     for(int k = 0; k < weights[i][j].size(); k++){
-                        weights[i][j][k] -= LR*weightGrad[i][j][k];
+                        mWeights[i][j][k] = adamBeta1 * mWeights[i][j][k] + (1-adamBeta1) * weightGrad[i][j][k];
+                        vWeights[i][j][k] = adamBeta2 * vWeights[i][j][k] + (1-adamBeta2) * weightGrad[i][j][k] * weightGrad[i][j][k];
+                        mHat = mWeights[i][j][k] / (1 - std::pow(adamBeta1, t));
+                        vHat = vWeights[i][j][k] / (1 - std::pow(adamBeta2, t));
+
+                        weights[i][j][k] -= LR * mHat / (std::sqrt(vHat) + EPSILON);
                     };
                 };
             };
 
             for(int i = 0; i < nLayers; i++){
                 for(int j = 0; j < biases[i].size(); j++){
-                    biases[i][j] -= LR*biasGrad[i][j];
+                    mBiases[i][j] = adamBeta1 * mBiases[i][j] + (1-adamBeta1) * biasGrad[i][j];
+                    vBiases[i][j] = adamBeta2 * vBiases[i][j] + (1-adamBeta2) * biasGrad[i][j] * biasGrad[i][j];
+                    mHat = mBiases[i][j] / (1 - std::pow(adamBeta1, t));
+                    vHat = vBiases[i][j] / (1 - std::pow(adamBeta2, t));
+                    biases[i][j] -= LR * mHat / (std::sqrt(vHat) + EPSILON);
                 };
             };
             return;

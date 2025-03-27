@@ -1,31 +1,32 @@
-#include "array.h"
+#include "vector.h"
 #include "model.h"
 #include <cmath>
 #include <numeric>
 #include <vector>
 
-const int BATCH_SIZE = 1;
+const int BATCH_SIZE = 20;
 const int N_INPUTS = 3;
-const int EPOCHS = 100000;
-const double LR = 0.000001;
+const int EPOCHS = 50000;
+const double LR = 0.005;
+const double EPSILON = 0.00000001;
 
 std::vector<std::vector<double>> GetExpected(std::vector<std::vector<double>> data);
 
 int main(){
     //model({input_size, neurons in layer...}, (min inicialized val, max inicialized val), Batch size
-    Model<4> model(std::vector<int>{N_INPUTS,3,3,1}, std::vector<Functions>{PReLU, ELU,Ident}, std::pair<double, double>(0, 1));
+    Model<4> model(std::vector<int>{N_INPUTS,30,1}, std::vector<Functions>{PReLU,Ident}, std::pair<double, double>(0, 1));
 
-    for(int i = 0; i < EPOCHS; i++){
+    for(int t = 1; t < EPOCHS+1; t++){
         //Shape: Batchsize x nInputs
         std::vector<std::vector<double>> data = GenData(std::pair<int, int>(BATCH_SIZE, N_INPUTS), std::pair<double, double>(0, 10));
         std::vector<std::vector<double>> expected = GetExpected(data);
 
         std::vector<std::vector<double>> predicted = model.ForwardPass(data);
-        if(i % 100 == 0){
+        if(t % 100 == 0){
             std::cout << "Loss: " << MSELoss(predicted, expected) << "\n";
         };
         model.Gradient(expected, predicted);
-        model.UpdateGradient(LR);
+        model.UpdateGradient(LR, t, EPSILON);
     };
     //Shape: Batchsize x nInputs
     std::vector<std::vector<double>> data = GenData(std::pair<int, int>(1, N_INPUTS), std::pair<double, double>(0, 10));
