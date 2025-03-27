@@ -4,17 +4,17 @@
 #include <numeric>
 #include <vector>
 
-const int BATCH_SIZE = 10;
+const int BATCH_SIZE = 20;
 const int N_INPUTS = 3;
-const int EPOCHS = 10000;
-const double LR = 0.01;
-const double EPSILON = 0.000000001;
+const int EPOCHS = 50000;
+const double LR = 0.005;
+const double EPSILON = 0.00000001;
 
 std::vector<std::vector<double>> GetExpected(std::vector<std::vector<double>> data);
 
 int main(){
     //model({input_size, neurons in layer...}, (min inicialized val, max inicialized val), Batch size
-    Model<4> model(std::vector<int>{N_INPUTS,3,3,1}, std::vector<Functions>{PReLU, ELU,Ident}, std::pair<double, double>(0, 1));
+    Model<4> model(std::vector<int>{N_INPUTS,30,1}, std::vector<Functions>{PReLU,Ident}, std::pair<double, double>(0, 1));
 
     for(int t = 1; t < EPOCHS+1; t++){
         //Shape: Batchsize x nInputs
