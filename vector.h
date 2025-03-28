@@ -8,23 +8,13 @@
 #include <vector>
 
 
-//PRINT ND ARRAY OR VECTOR
+//PRINT ND VECTOR
 // Base case
 template <typename T>
 void PrintArray(const T& value) {
     std::cout << value << " ";
 }
 
-// Overload for array
-template <typename T, std::size_t N>
-void PrintArray(const std::array<T, N> &arr) {
-    for (const auto& element : arr) {
-        PrintArray(element);
-    };
-    std::cout << "\n";
-}
-
-// Overload for vector
 template <typename T>
 void PrintArray(const std::vector<T> &vec) {
     for (const auto& element : vec) {
@@ -33,24 +23,30 @@ void PrintArray(const std::vector<T> &vec) {
     std::cout << "\n";
 }
 
-//Overload for array
-template <typename T, std::size_t N>
-void NDArray(const std::array<T, N> &arr, std::string message = ""){
-    std::cout << message << "\n";
-    PrintArray(arr);
-};
-
-//Overload for vector
 template <typename T>
 void NDArray(const std::vector<T> &vec, std::string message = ""){
     std::cout << message << "\n";
     PrintArray(vec);
 };
 
+
+void MatrixSymmetry(std::vector<std::vector<double>> &m){
+    //Safety check for symmetry
+    for(int i = 1; i < m.size(); i++){
+        if (m[i].size() != m[i-1].size()){
+            throw std::runtime_error("Matrix is not symetrical when doing matmul");
+        };
+    };
+    return;
+};
+
 //MATMUL
 std::vector<std::vector<double>> MatMul(std::vector<std::vector<double>> &m1, std::vector<std::vector<double>> &m2){
     std::vector<std::vector<double>> mOut(m1.size(), std::vector<double>(m2[0].size(), 0));
-    //bad validation MAKE BETTER
+    //Check their symmetry
+    MatrixSymmetry(m1);
+    MatrixSymmetry(m2);
+    //Safety check for dimensions
     if(m1[0].size() != m2.size()){
         throw std::runtime_error("Missmatched matrix dimensions when doing matmul");
     };
@@ -68,6 +64,8 @@ std::vector<std::vector<double>> MatMul(std::vector<std::vector<double>> &m1, st
 
 //Matrix element addintion
 std::vector<std::vector<double>> ElementAddition(std::vector<std::vector<double>> &m1, std::vector<std::vector<double>> &m2){
+    MatrixSymmetry(m1);
+    MatrixSymmetry(m2);
     std::vector<std::vector<double>> out = m1;
     for(int i = 0; i < m2.size(); i++){
         for(int j = 0; j < m2[i].size(); j++){
@@ -79,6 +77,8 @@ std::vector<std::vector<double>> ElementAddition(std::vector<std::vector<double>
 
 //Matrix element subtraction
 std::vector<std::vector<double>> ElementSubraction(std::vector<std::vector<double>> m1, std::vector<std::vector<double>> &m2){
+    MatrixSymmetry(m1);
+    MatrixSymmetry(m2);
     for(int i = 0; i < m2.size(); i++){
         for(int j = 0; j < m2[i].size(); j++){
             m1[i][j] -= m2[i][j];
@@ -89,6 +89,8 @@ std::vector<std::vector<double>> ElementSubraction(std::vector<std::vector<doubl
 
 //Matrix element multiplication
 std::vector<std::vector<double>> ElementMultiply(std::vector<std::vector<double>> m1, std::vector<std::vector<double>> &m2){
+    MatrixSymmetry(m1);
+    MatrixSymmetry(m2);
     for(int i = 0; i < m2.size(); i++){
         for(int j = 0; j < m2[i].size(); j++){
             m1[i][j] *= m2[i][j];
@@ -109,6 +111,7 @@ std::vector<std::vector<double>> ScalarMult(std::vector<std::vector<double>> m, 
 
 //Matrix transpose
 std::vector<std::vector<double>> Transpose(std::vector<std::vector<double>> m){
+    MatrixSymmetry(m);
     std::vector<std::vector<double>> out(m[0].size(), std::vector<double>(m.size()));
     for(int i = 0; i < m.size(); i++){
         for(int j = 0; j < m[0].size(); j++){
