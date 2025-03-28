@@ -27,6 +27,7 @@ std::vector<std::vector<double>> GenData(const std::pair<int, int> shape, const 
 };
 
 
+//Activation functions
 enum Functions {
     ReLU, 
     ELU,
@@ -46,20 +47,20 @@ class Model{
         //Shape: nLayers x nInputs x nNeurons
         std::vector<std::vector<std::vector<double>>> weights;
 
+        //Activation functions for each layer
         std::vector<Functions> activationFunctions;
 
+        //Cached values from forward pass
         std::vector<std::vector<std::vector<double>>> weightedCache;
         std::vector<std::vector<std::vector<double>>> activationCache;
 
-        //Momentum for Adam
+        //Momentum for Adam optimizer
         std::vector<std::vector<double>> mBiases;
         std::vector<std::vector<double>> vBiases;
         std::vector<std::vector<std::vector<double>>> mWeights;
         std::vector<std::vector<std::vector<double>>> vWeights;
 
-        const double adamBeta1 = 0.9;
-        const double adamBeta2 = 0.999;
-
+        //Gradient vectors
         std::vector<std::vector<std::vector<double>>> weightGrad;
         std::vector<std::vector<double>> biasGrad;
 
@@ -83,6 +84,7 @@ class Model{
             return;
         };
 
+        //Derivative of activation functions
         std::vector<std::vector<double>> Derivative(Functions f, std::vector<std::vector<double>> &m){
             std::vector<std::vector<double>> out = m;
             switch (f) {
@@ -122,11 +124,13 @@ class Model{
 
     public:
         Model(std::vector<int> nNeurons, std::vector<Functions> F, std::pair<double, double> valueRange){
-            activationFunctions = F;
-            nLayers = nNeurons.size()-1;
             std::random_device rd;
             std::mt19937 gen(rd());
             std::uniform_real_distribution<double> dis(valueRange.first, valueRange.second);
+
+            activationFunctions = F;
+            //First in nNeurons is the number of inputs 
+            nLayers = nNeurons.size()-1;
 
             //INICIALIZE BIASES
             //Leave out the first number as it is the number of inputs
@@ -138,7 +142,6 @@ class Model{
             //INICIALIZE WEIGHTS
             for(int i = 1; i < nNeurons.size(); i++){
                 weights.push_back(std::vector<std::vector<double>>(nNeurons[i-1], std::vector<double>(nNeurons[i], 0)));
-
                 for(int j = 0; j < nNeurons[i-1]; j++){
                     for(int k = 0; k < nNeurons[i]; k++){
                         weights.back()[j][k] = dis(gen);
@@ -146,9 +149,11 @@ class Model{
                 };
             };
 
+            //Copy the weights and biases to gradient vectors so that they have the same shape
             weightGrad = weights;
             biasGrad = biases;
 
+            //Initialize momentum vectors for Adam with zeros
             for(int i = 0; i < weights.size(); i++){
                 std::vector<std::vector<double>> temp;
                 for(int j = 0; j < weights[i].size(); j++){
@@ -172,6 +177,7 @@ class Model{
             weightedCache = {};
             activationCache = {input};
 
+            //Pass through layers
             for(int i = 0; i < weights.size(); i++){
                 input = MatMul(input, weights[i]);
                 std::vector<std::vector<double>> cache(input.size(), std::vector<double>(input[0].size(), 0));
@@ -182,6 +188,7 @@ class Model{
                         Activation(activationFunctions[i], input[k][j]);
                     };
                 };
+                //cache the values
                 weightedCache.push_back(cache);
                 activationCache.push_back(input);
             };
@@ -207,9 +214,11 @@ class Model{
             return;
         };
 
-        void UpdateGradient(const double LR, const int t, const double EPSILON){
+        //Gradient update with Adam optimizer
+        void UpdateGradient(const double LR, const int t, const double adamBeta1, const double adamBeta2, const double EPSILON){
             double mHat;
             double vHat;
+            //Update weights
             for(int i = 0; i < nLayers; i++){
                 for(int j = 0; j < weights[i].size(); j++){
                     for(int k = 0; k < weights[i][j].size(); k++){
@@ -223,6 +232,7 @@ class Model{
                 };
             };
 
+            //Update Biases
             for(int i = 0; i < nLayers; i++){
                 for(int j = 0; j < biases[i].size(); j++){
                     mBiases[i][j] = adamBeta1 * mBiases[i][j] + (1-adamBeta1) * biasGrad[i][j];
